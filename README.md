@@ -8,6 +8,7 @@ A Node.js/TypeScript script that sends a WhatsApp group message with the latest 
 2. Copy `.env.example` to `.env` and fill in:
    - `LEAGUE_ID` — from the URL of the league table on fantasy.premierleague.com, e.g. `https://fantasy.premierleague.com/leagues/XXXXX/standings/c`
    - `WHATSAPP_GROUP_INVITE_CODE` — the part after `https://chat.whatsapp.com/` in the group's invite link
+   - `GEMINI_API_KEY` *(optional)* — enables an AI-generated one-line recap of the gameweek (via Google Gemini), prepended to the leaderboard message. Get a free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey). If omitted, or if the API call fails for any reason, the plain leaderboard is sent as before.
 3. `npm run login`
 
 A QR code is printed in the terminal — scan it from WhatsApp on your phone (Settings > Linked Devices) to log in. The session is then cached in `auth_info_baileys/` so future runs don't require re-scanning.
@@ -64,6 +65,7 @@ You can also manually trigger `.github/workflows/send-leaderboard.yml` via "Run 
    - `SESSION_ENCRYPTION_KEY` — the passphrase from step 2
    - `LEAGUE_ID`
    - `WHATSAPP_GROUP_INVITE_CODE`
+   - `GEMINI_API_KEY` *(optional)* — only needed if you want the AI-generated gameweek recap in the scheduled job too
 6. **Allow the workflow to push**: Settings → Actions → General → Workflow permissions → "Read and write permissions" (needed so it can commit the refreshed session back to the repo).
 
 After that, the scheduled run handles itself. If WhatsApp ever logs the session out (e.g. unlinked from your phone), delete `auth_info_baileys.tar.gz.enc`, repeat steps 1–4 locally, and push the new file.

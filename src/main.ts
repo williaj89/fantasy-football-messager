@@ -3,6 +3,7 @@ import { buildLeaderboardMessage, fetchStandings } from './leaderboard.js';
 import { connect, resolveGroupJid, sendGroupMessage } from './whatsapp.js';
 import { fetchCurrentGameweekStatus, isFinalized, type GameweekStatus } from './gameweekStatus.js';
 import { readState, writeState } from './state.js';
+import { generateGameweekSummary } from './summary.js';
 
 const STATE_PATH = process.env.SEND_STATE_PATH ?? 'send-state.json';
 
@@ -40,7 +41,10 @@ export async function main(): Promise<void> {
   }
 
   const standings = await fetchStandings(leagueId);
-  const message = buildLeaderboardMessage(standings);
+  const leaderboardMessage = buildLeaderboardMessage(standings);
+
+  const summary = await generateGameweekSummary(standings, gameweekStatus?.id ?? null);
+  const message = summary ? `${summary}\n\n${leaderboardMessage}` : leaderboardMessage;
 
   const sock = await connect();
   try {

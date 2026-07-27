@@ -16,9 +16,14 @@ vi.mock('../src/state.js', () => ({
   writeState: vi.fn(),
 }));
 
+vi.mock('../src/summary.js', () => ({
+  generateGameweekSummary: vi.fn(),
+}));
+
 import { connect, resolveGroupJid, sendGroupMessage } from '../src/whatsapp.js';
 import { fetchCurrentGameweekStatus, isFinalized } from '../src/gameweekStatus.js';
 import { readState, writeState } from '../src/state.js';
+import { generateGameweekSummary } from '../src/summary.js';
 import { main } from '../src/main.js';
 
 describe('main', () => {
@@ -39,6 +44,7 @@ describe('main', () => {
     vi.mocked(isFinalized).mockReturnValue(true);
     vi.mocked(readState).mockResolvedValue({ lastSentGameweek: null });
     vi.mocked(writeState).mockResolvedValue(undefined);
+    vi.mocked(generateGameweekSummary).mockResolvedValue(null);
 
     vi.stubGlobal(
       'fetch',
@@ -93,6 +99,53 @@ describe('main', () => {
     expect(sendGroupMessage).toHaveBeenCalledWith(mockSock, '12345-6789@g.us', '1. Team 1 ◀ 0');
     expect(mockSock.end).toHaveBeenCalled();
     expect(writeState).not.toHaveBeenCalled();
+  });
+
+  it('prepends the AI summary to the leaderboard message when generation succeeds', async () => {
+    vi.mocked(generateGameweekSummary).mockResolvedValue('What a week!');
+
+    await main();
+
+    expect(sendGroupMessage).toHaveBeenCalledWith(
+      mockSock,
+      '12345-6789@g.us',
+      'What a week!\n\n1. Team 1 ◀ 0',
+    );
+  });
+
+  it('sends only the plain leaderboard when summary generation returns null', async () => {
+    vi.mocked(generateGameweekSummary).mockResolvedValue(null);
+
+    await main();
+
+    expect(sendGroupMessage).toHaveBeenCalledWith(mockSock, '12345-6789@g.us', '1. Team 1 ◀ 0');
+  });
+
+  it('calls generateGameweekSummary even when FORCE_SEND bypasses gameweek checks', async () => {
+    process.env.FORCE_SEND = 'true';
+    vi.mocked(isFinalized).mockReturnValue(false);
+    vi.mocked(generateGameweekSummary).mockResolvedValue('Preseason vibes!');
+
+    await main();
+
+    expect(generateGameweekSummary).toHaveBeenCalledWith(
+      [{ entry_name: 'Team 1', rank: 1, last_rank: 1, total: 100 }],
+      null,
+    );
+    expect(sendGroupMessage).toHaveBeenCalledWith(
+      mockSock,
+      '12345-6789@g.us',
+      'Preseason vibes!\n\n1. Team 1 ◀ 0',
+    );
+  });
+
+  it('passes the finalized gameweek id to generateGameweekSummary on a normal run', async () => {
+    await main();
+
+    expect(generateGameweekSummary).toHaveBeenCalledWith(
+      [{ entry_name: 'Team 1', rank: 1, last_rank: 1, total: 100 }],
+      5,
+    );
   });
 
   it('throws when LEAGUE_ID is missing', async () => {

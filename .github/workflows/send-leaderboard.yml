@@ -49,6 +49,7 @@ jobs:
         env:
           LEAGUE_ID: ${{ secrets.LEAGUE_ID }}
           WHATSAPP_GROUP_INVITE_CODE: ${{ secrets.WHATSAPP_GROUP_INVITE_CODE }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           FORCE_SEND: ${{ inputs.force_send }}
         run: npm start
 

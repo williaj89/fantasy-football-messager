@@ -1,6 +1,11 @@
 # Dependencies
 node_modules/
 
+# Python (stray venv/tooling artifacts — this is a Node project)
+venv/
+__pycache__/
+*.pyc
+
 # Build output
 dist/
 
