@@ -1,0 +1,69 @@
+name: Send leaderboard
+
+on:
+  schedule:
+    # Poll every 15 minutes on Monday/Tuesday evenings UTC, the window scores usually
+    # finalize in (bonus points, VAR corrections, postponements). main.ts checks
+    # whether the gameweek is actually finalized and exits without connecting to
+    # WhatsApp if not, so most of these runs are cheap no-ops. Tune this window once
+    # real timing data is available for the season.
+    - cron: '*/15 18-23 * * 1,2'
+    # Fallback: guarantees a send even if the polling schedule above is delayed or
+    # skipped (a known GitHub Actions risk under load). Safe to keep — main.ts skips
+    # the send if this gameweek was already sent via send-state.json.
+    - cron: '0 7 * * 2'
+  workflow_dispatch:
+    inputs:
+      force_send:
+        description: 'Bypass the finalization/already-sent checks and send immediately (for testing)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: send-leaderboard
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - name: Restore WhatsApp session
+        env:
+          SESSION_ENCRYPTION_KEY: ${{ secrets.SESSION_ENCRYPTION_KEY }}
+        run: |
+          if [ -f auth_info_baileys.tar.gz.enc ]; then
+            npm run session:unpack
+          fi
+
+      - name: Check gameweek status and send if finalized and not already sent
+        env:
+          LEAGUE_ID: ${{ secrets.LEAGUE_ID }}
+          WHATSAPP_GROUP_INVITE_CODE: ${{ secrets.WHATSAPP_GROUP_INVITE_CODE }}
+          FORCE_SEND: ${{ inputs.force_send }}
+        run: npm start
+
+      - name: Persist WhatsApp session and send state
+        if: always()
+        env:
+          SESSION_ENCRYPTION_KEY: ${{ secrets.SESSION_ENCRYPTION_KEY }}
+        run: |
+          if [ -d auth_info_baileys ]; then
+            npm run session:pack
+          fi
+          if [ -n "$(git status --porcelain -- auth_info_baileys.tar.gz.enc send-state.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add auth_info_baileys.tar.gz.enc send-state.json
+            git commit -m "Update WhatsApp session and send state"
+            git push
+          fi

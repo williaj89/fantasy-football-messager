@@ -1,0 +1,50 @@
+{
+  "name": "fantasy-football-messager",
+  "version": "1.0.0",
+  "description": "Sends a WhatsApp group message with the latest league table and the changes in league positions, using Baileys",
+  "main": "src/main.ts",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "login": "tsx src/login.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "session:pack": "tar czf - auth_info_baileys | openssl enc -aes-256-cbc -pbkdf2 -pass env:SESSION_ENCRYPTION_KEY -out auth_info_baileys.tar.gz.enc",
+    "session:unpack": "openssl enc -d -aes-256-cbc -pbkdf2 -pass env:SESSION_ENCRYPTION_KEY -in auth_info_baileys.tar.gz.enc | tar xz"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/williaj89/fantasy-football-messager.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/williaj89/fantasy-football-messager/issues"
+  },
+  "homepage": "https://github.com/williaj89/fantasy-football-messager#readme",
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@whiskeysockets/baileys": "^7.0.0-rc13",
+    "dotenv": "^17.4.2",
+    "pino": "^10.3.1",
+    "qrcode-terminal": "^0.12.0"
+  },
+  "allowScripts": {
+    "@whiskeysockets/baileys@7.0.0-rc13": true,
+    "protobufjs@7.6.5": true,
+    "esbuild@0.28.1": true,
+    "fsevents@2.3.3": true
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/qrcode-terminal": "^0.12.2",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}
