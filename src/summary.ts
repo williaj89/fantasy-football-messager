@@ -86,7 +86,7 @@ export async function generateGameweekSummary(
       model: 'gemini-3.6-flash',
       input: buildUserPrompt(standings, gameweekId),
       system_instruction: SYSTEM_PROMPT,
-      generation_config: { max_output_tokens: 300 },
+      generation_config: { max_output_tokens: 1000, thinking_level: 'minimal' },
     });
 
     const text = interaction.output_text?.trim() ?? '';

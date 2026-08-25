@@ -5,10 +5,11 @@
   "main": "src/main.ts",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "scripts": {
     "start": "tsx src/main.ts",
+    "preview": "tsx src/preview.ts",
     "login": "tsx src/login.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
