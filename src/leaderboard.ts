@@ -1,8 +1,10 @@
 export interface StandingEntry {
+  entry: number;
   entry_name: string;
   rank: number;
   last_rank: number;
   total: number;
+  event_total: number;
 }
 
 interface StandingsResponse {

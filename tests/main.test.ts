@@ -20,11 +20,28 @@ vi.mock('../src/summary.js', () => ({
   generateGameweekSummary: vi.fn(),
 }));
 
+vi.mock('../src/teamDetails.js', () => ({
+  fetchTeamDetails: vi.fn(),
+}));
+
+vi.mock('../src/seasonHistory.js', () => ({
+  fetchSeasonHistories: vi.fn(),
+}));
+
+vi.mock('../src/playerPerformance.js', () => ({
+  computePlayerPerformance: vi.fn(),
+}));
+
 import { connect, resolveGroupJid, sendGroupMessage } from '../src/whatsapp.js';
 import { fetchCurrentGameweekStatus, isFinalized } from '../src/gameweekStatus.js';
 import { readState, writeState } from '../src/state.js';
 import { generateGameweekSummary } from '../src/summary.js';
+import { fetchTeamDetails } from '../src/teamDetails.js';
+import { fetchSeasonHistories } from '../src/seasonHistory.js';
+import { computePlayerPerformance } from '../src/playerPerformance.js';
 import { main } from '../src/main.js';
+
+const NO_PERFORMANCE = { topPerformer: null, bestDifferential: null };
 
 describe('main', () => {
   const mockSock = { end: vi.fn() } as unknown as Awaited<ReturnType<typeof connect>>;
@@ -45,6 +62,9 @@ describe('main', () => {
     vi.mocked(readState).mockResolvedValue({ lastSentGameweek: null });
     vi.mocked(writeState).mockResolvedValue(undefined);
     vi.mocked(generateGameweekSummary).mockResolvedValue(null);
+    vi.mocked(fetchTeamDetails).mockResolvedValue([]);
+    vi.mocked(fetchSeasonHistories).mockResolvedValue([]);
+    vi.mocked(computePlayerPerformance).mockResolvedValue(NO_PERFORMANCE);
 
     vi.stubGlobal(
       'fetch',
@@ -52,7 +72,7 @@ describe('main', () => {
         json: () =>
           Promise.resolve({
             standings: {
-              results: [{ entry_name: 'Team 1', rank: 1, last_rank: 1, total: 100 }],
+              results: [{ entry: 1, entry_name: 'Team 1', rank: 1, last_rank: 1, total: 100, event_total: 60 }],
             },
           }),
       }),
@@ -128,9 +148,14 @@ describe('main', () => {
 
     await main();
 
+    expect(fetchTeamDetails).not.toHaveBeenCalled();
+    expect(computePlayerPerformance).not.toHaveBeenCalled();
     expect(generateGameweekSummary).toHaveBeenCalledWith(
-      [{ entry_name: 'Team 1', rank: 1, last_rank: 1, total: 100 }],
+      [{ entry: 1, entry_name: 'Team 1', rank: 1, last_rank: 1, total: 100, event_total: 60 }],
       null,
+      [],
+      [],
+      NO_PERFORMANCE,
     );
     expect(sendGroupMessage).toHaveBeenCalledWith(
       mockSock,
@@ -142,9 +167,20 @@ describe('main', () => {
   it('passes the finalized gameweek id to generateGameweekSummary on a normal run', async () => {
     await main();
 
-    expect(generateGameweekSummary).toHaveBeenCalledWith(
-      [{ entry_name: 'Team 1', rank: 1, last_rank: 1, total: 100 }],
+    expect(fetchTeamDetails).toHaveBeenCalledWith(
+      [{ entry: 1, entry_name: 'Team 1', rank: 1, last_rank: 1, total: 100, event_total: 60 }],
       5,
+    );
+    expect(fetchSeasonHistories).toHaveBeenCalledWith([
+      { entry: 1, entry_name: 'Team 1', rank: 1, last_rank: 1, total: 100, event_total: 60 },
+    ]);
+    expect(computePlayerPerformance).toHaveBeenCalledWith([], 5);
+    expect(generateGameweekSummary).toHaveBeenCalledWith(
+      [{ entry: 1, entry_name: 'Team 1', rank: 1, last_rank: 1, total: 100, event_total: 60 }],
+      5,
+      [],
+      [],
+      NO_PERFORMANCE,
     );
   });
 

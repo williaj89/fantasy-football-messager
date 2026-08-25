@@ -2,11 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildLeaderboardMessage, fetchStandings, type StandingEntry } from '../src/leaderboard.js';
 
 const standings: StandingEntry[] = [
-  { entry_name: 'Team 1', rank: 1, last_rank: 4, total: 100 },
-  { entry_name: 'Team 2', rank: 2, last_rank: 1, total: 90 },
-  { entry_name: 'Team 3', rank: 3, last_rank: 3, total: 85 },
-  { entry_name: 'Team 4', rank: 4, last_rank: 2, total: 80 },
-  { entry_name: 'Team 5', rank: 5, last_rank: 5, total: 75 },
+  { entry: 1, entry_name: 'Team 1', rank: 1, last_rank: 4, total: 100, event_total: 60 },
+  { entry: 2, entry_name: 'Team 2', rank: 2, last_rank: 1, total: 90, event_total: 55 },
+  { entry: 3, entry_name: 'Team 3', rank: 3, last_rank: 3, total: 85, event_total: 50 },
+  { entry: 4, entry_name: 'Team 4', rank: 4, last_rank: 2, total: 80, event_total: 45 },
+  { entry: 5, entry_name: 'Team 5', rank: 5, last_rank: 5, total: 75, event_total: 40 },
 ];
 
 describe('buildLeaderboardMessage', () => {

@@ -2,6 +2,9 @@ import 'dotenv/config';
 import { buildLeaderboardMessage, fetchStandings } from './leaderboard.js';
 import { fetchCurrentGameweekStatus } from './gameweekStatus.js';
 import { generateGameweekSummary } from './summary.js';
+import { fetchTeamDetails } from './teamDetails.js';
+import { fetchSeasonHistories } from './seasonHistory.js';
+import { computePlayerPerformance } from './playerPerformance.js';
 
 export async function preview(): Promise<void> {
   const leagueId = process.env.LEAGUE_ID;
@@ -12,7 +15,13 @@ export async function preview(): Promise<void> {
   const gameweekStatus = await fetchCurrentGameweekStatus();
   const standings = await fetchStandings(leagueId);
   const leaderboardMessage = buildLeaderboardMessage(standings);
-  const summary = await generateGameweekSummary(standings, gameweekStatus?.id ?? null);
+  const gameweekId = gameweekStatus?.id ?? null;
+  const teamDetails = gameweekId ? await fetchTeamDetails(standings, gameweekId) : [];
+  const seasonHistories = await fetchSeasonHistories(standings);
+  const playerPerformance = gameweekId
+    ? await computePlayerPerformance(teamDetails, gameweekId)
+    : { topPerformer: null, bestDifferential: null };
+  const summary = await generateGameweekSummary(standings, gameweekId, teamDetails, seasonHistories, playerPerformance);
   const message = summary ? `${summary}\n\n${leaderboardMessage}` : leaderboardMessage;
 
   console.log(message);
